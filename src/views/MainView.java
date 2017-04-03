@@ -153,15 +153,21 @@ public class MainView extends JFrame {
 				}
 				
 				try {
-					FileWriter fw;
-					fw = new FileWriter(sparseCheckoutFile.getAbsoluteFile());
+					FileWriter fw = new FileWriter(sparseCheckoutFile.getAbsoluteFile());
 					textAreaContent.write(fw);
+					
 					Process process = Runtime.getRuntime().exec("git read-tree -m -u HEAD", null, projectDir);
 					String output = Utils.getInputAsString(process.getInputStream());
-					if("".equals(output)) {
-						JOptionPane.showMessageDialog(MainView.this, Messages.getString("MSG_SUCCESS"), Messages.getString("SUCCESS"), JOptionPane.INFORMATION_MESSAGE);  //$NON-NLS-2$
+					String outputError = Utils.getInputAsString(process.getErrorStream());
+					
+					if("".equals(output) && "".equals(outputError)) {
+						int input = JOptionPane.showOptionDialog(MainView.this, Messages.getString("MSG_SUCCESS"), Messages.getString("SUCCESS"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
+						
+						//if(input == JOptionPane.OK_OPTION) {
+						//	System.exit(0);
+						//}
 					} else {
-						throw new Exception(output);
+						throw new Exception(output + " " + outputError);
 					}
 				} catch (Exception e) {
 					JOptionPane.showMessageDialog(MainView.this, e.getMessage(), Messages.getString("ERROR"), JOptionPane.ERROR_MESSAGE);

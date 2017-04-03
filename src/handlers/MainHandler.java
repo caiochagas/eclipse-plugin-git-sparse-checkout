@@ -12,11 +12,19 @@ import views.MainView;
  * @see org.eclipse.core.commands.AbstractHandler
  */
 public class MainHandler extends AbstractHandler {
+	
+	private static MainView mainView;
 
 	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		MainView mainView = new MainView();
-		mainView.setVisible(true);
+		if(mainView == null) {
+			mainView = new MainView();
+			mainView.setVisible(true);
+		}else {
+			mainView.setState(java.awt.Frame.NORMAL);
+			mainView.setVisible(true);
+		}
+		
 		return null;
 	}
 }
