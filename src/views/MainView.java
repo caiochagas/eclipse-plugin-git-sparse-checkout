@@ -1,4 +1,5 @@
 package views;
+import java.awt.Cursor;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.Toolkit;
@@ -32,6 +33,7 @@ public class MainView extends JFrame {
 	private JTextField textFieldProjectPath;
 	private JButton btnSave;
 	private JTextArea textAreaContent;
+	private JLabel lblRefreshing;
 	
 	public File projectDir;
 	public File sparseCheckoutFile;
@@ -151,28 +153,38 @@ public class MainView extends JFrame {
 					JOptionPane.showMessageDialog(MainView.this, Messages.getString("MSG_SELECT_PROJECT_FIRST"), Messages.getString("ATTENTION"), JOptionPane.WARNING_MESSAGE);  //$NON-NLS-2$
 					return;
 				}
+				lblRefreshing.setVisible(true);
+
+				new java.util.Timer().schedule( 
+				        new java.util.TimerTask() {
+				            @Override
+				            public void run() {
+				            	try {
+									MainView.this.revalidate();
+									MainView.this.repaint();
+									FileWriter fw = new FileWriter(sparseCheckoutFile.getAbsoluteFile());
+									textAreaContent.write(fw);
+									
+									Process process = Runtime.getRuntime().exec("git read-tree -m -u HEAD", null, projectDir);
+									String output = Utils.getInputAsString(process.getInputStream());
+									String outputError = Utils.getInputAsString(process.getErrorStream());
+									
+									if("".equals(output) && "".equals(outputError)) {
+										int input = JOptionPane.showOptionDialog(MainView.this, Messages.getString("MSG_SUCCESS"), Messages.getString("SUCCESS"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
+									} else {
+										throw new Exception(output + " " + outputError);
+									}
+								} catch (Exception e) {
+									JOptionPane.showMessageDialog(MainView.this, e.getMessage(), Messages.getString("ERROR"), JOptionPane.ERROR_MESSAGE);
+									e.printStackTrace();
+								} finally {
+									lblRefreshing.setVisible(false);
+								}
+				            }
+				        }, 10 
+				);
 				
-				try {
-					FileWriter fw = new FileWriter(sparseCheckoutFile.getAbsoluteFile());
-					textAreaContent.write(fw);
-					
-					Process process = Runtime.getRuntime().exec("git read-tree -m -u HEAD", null, projectDir);
-					String output = Utils.getInputAsString(process.getInputStream());
-					String outputError = Utils.getInputAsString(process.getErrorStream());
-					
-					if("".equals(output) && "".equals(outputError)) {
-						int input = JOptionPane.showOptionDialog(MainView.this, Messages.getString("MSG_SUCCESS"), Messages.getString("SUCCESS"), JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null, null, null);
-						
-						//if(input == JOptionPane.OK_OPTION) {
-						//	System.exit(0);
-						//}
-					} else {
-						throw new Exception(output + " " + outputError);
-					}
-				} catch (Exception e) {
-					JOptionPane.showMessageDialog(MainView.this, e.getMessage(), Messages.getString("ERROR"), JOptionPane.ERROR_MESSAGE);
-					e.printStackTrace();
-				}
+				
 			}
 		});
 		btnSave.setBounds(480, 537, 104, 26);
@@ -182,6 +194,11 @@ public class MainView extends JFrame {
 		lblDirectory.setFont(new Font("Tahoma", Font.PLAIN, 12)); 
 		lblDirectory.setBounds(10, 11, 188, 14);
 		contentPane.add(lblDirectory);
+		
+		lblRefreshing = new JLabel(Messages.getString("LABEL_REFRESHING"));
+		lblRefreshing.setBounds(10, 537, 188, 14);
+		lblRefreshing.setVisible(false);
+		contentPane.add(lblRefreshing);
 		setLocationRelativeTo(null);
 		
 		JScrollBar vertical = scrollPaneContent.getVerticalScrollBar();
